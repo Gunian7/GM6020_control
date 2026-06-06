@@ -1,0 +1,11 @@
+# JLink GDB Server startup script for CLion
+# CLion will use this to launch JLinkGDBServer
+# 
+# Usage: Run -> Edit Configurations -> + -> JLink GDB Server
+# Settings:
+#   Target: STM32F407IG
+#   GDB Server: /opt/SEGGER/JLink/JLinkGDBServer (or wherever JLink is installed)
+#   Executable: build/gm6020_control.elf
+#   GDB: arm-none-eabi-gdb
+#   Download: check "Always"
+#   Run After: check "continue"

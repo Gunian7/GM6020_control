@@ -1,0 +1,7 @@
+# 烧录脚本 - 直接用 JLinkExe 命令行烧录
+# 用法: JLinkExe -device STM32F407IG -if SWD -speed 4000 -autoconnect 1 -CommanderScript flash.jlink
+
+loadfile build/gm6020_control.hex
+r
+g
+exit

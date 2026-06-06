@@ -1,0 +1,5 @@
+# Blinky 烧录脚本
+loadfile blinky.hex
+r
+g
+exit
