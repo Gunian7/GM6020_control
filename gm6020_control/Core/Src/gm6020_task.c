@@ -2,7 +2,6 @@
  * @file gm6020_task.c
  * @brief GM6020 电机控制任务实现（FreeRTOS）
  * 
- * 控制任务流程（参考教程第19章云台控制任务）:
  *   1. osDelay(1) 等待 1ms
  *   2. 根据控制模式选择控制算法
  *   3. 发送 CAN 控制帧
@@ -74,21 +73,19 @@ void GM6020_ControlTask(void *argument)
     GM6020_InitAll(g_gm6020_motors, GM6020_MAX_MOTORS);
     
     /* 等待 CAN 初始化完成 */
-    HAL_Delay(100);
-    
-    /* 启动 CAN 接收（如果 CubeMX 中没有自动启动） */
-    HAL_CAN_Start(&GM6020_CAN_HANDLE);
-    HAL_CAN_ActivateNotification(&GM6020_CAN_HANDLE, CAN_IT_RX_FIFO0_MSG_PENDING);
-    
-    /* === 示例：设置控制目标 === */
-    /* 电机1：位置模式，转到 90° */
-    GM6020_SetTargetAngle(&g_gm6020_motors[0], 90.0f);
-    /* 电机2：位置模式，转到 -45° */
-    GM6020_SetTargetAngle(&g_gm6020_motors[1], -45.0f);
-    /* 电机3：速度模式，目标 50rpm */
-    GM6020_SetTargetSpeed(&g_gm6020_motors[2], 50.0f);
-    /* 电机4：速度模式，目标 -30rpm */
-    GM6020_SetTargetSpeed(&g_gm6020_motors[3], -30.0f);
+    osDelay(100);
+
+    /* 注意：CAN 启动已在 main.c 中完成，此处不再重复调用 HAL_CAN_Start */
+
+    /* === 初始状态：所有电机不转，等待 Ozone 设置目标 === */
+    /* 用 Ozone 修改变量的示例：
+     *   电机1位置模式: g_gm6020_motors[0].target_angle_deg = 90.0;
+     *                   g_gm6020_motors[0].control_mode = 2;
+     *   电机1速度模式: g_gm6020_motors[0].target_speed_rpm = 50.0f;
+     *                   g_gm6020_motors[0].control_mode = 1;
+     *   查看当前角度:   g_gm6020_motors[0].feedback.total_angle_deg
+     *   查看当前转速:   g_gm6020_motors[0].feedback.speed_rpm
+     */
     
     /* === 主循环 === */
     for (;;)

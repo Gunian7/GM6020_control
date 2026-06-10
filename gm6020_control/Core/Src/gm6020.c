@@ -30,8 +30,8 @@ void GM6020_Init(gm6020_control_t *motor, uint8_t motor_id)
     motor->motor_id    = motor_id;
     motor->feedback_id = 0x204 + motor_id;  /* 反馈报文 ID */
     
-    /* 默认模式：速度环 */
-    motor->control_mode = 1;
+    /* 默认模式：空闲（电压开环，输出 0）——等待 Ozone 设置 */
+    motor->control_mode = 0;
     
     /* ---------- 速度环 PID 初始化 ---------- */
     /* 
@@ -41,11 +41,11 @@ void GM6020_Init(gm6020_control_t *motor, uint8_t motor_id)
      * 建议从较小的 Kp 开始调试
      */
     {
-        fp32 speed_pid_param[3] = {15.0f, 0.5f, 0.0f};  /* Kp, Ki, Kd */
+        fp32 speed_pid_param[3] = {60.0f, 4.0f, 0.0f};  /* Kp, Ki, Kd */
         PID_Init(&motor->speed_pid, PID_POSITION,
                  speed_pid_param,
                  25000.0f,   /* max_out: 对应 GM6020 电压最大输出 */
-                 5000.0f);   /* max_iout */
+                 140.0f);   /* max_iout */
     }
     
     /* ---------- 角度环 PID 初始化 ---------- */
@@ -55,7 +55,7 @@ void GM6020_Init(gm6020_control_t *motor, uint8_t motor_id)
      * 外环输出是内环的速度设定值，范围 0~320rpm
      */
     {
-        fp32 angle_pid_param[3] = {8.0f, 0.0f, 0.0f};   /* Kp, Ki, Kd */
+        fp32 angle_pid_param[3] = {25.0f, 0.0f, 40.0f};   /* Kp, Ki, Kd */
         PID_Init(&motor->angle_pid, PID_POSITION,
                  angle_pid_param,
                  300.0f,    /* max_out: 最大输出转速 (rpm) */
@@ -190,8 +190,13 @@ void GM6020_PositionControl(gm6020_control_t *motor)
     /* 角度环输入：期望角度 vs 实际累积角度 */
     /* 注意：如果控制范围在单圈内，可以用 angle_deg；
      *       如果需要多圈定位，使用 total_angle_deg */
-    fp32 angle_ref = motor->feedback.total_angle_deg;  /* 实际位置（度） */
+    fp32 angle_ref = motor->feedback.angle_deg;  /* 实际位置（度），单圈 0~360° */
     fp32 angle_set = motor->target_angle_deg;          /* 目标位置（度） */
+    
+    /* 过零保护：将目标角度映射到当前位置所在的圈内，避免过零跳变 */
+    /* 确保目标与当前位置的差值不超过 ±180° */
+    while ((angle_set - angle_ref) > 180.0f)  angle_set -= 360.0f;
+    while ((angle_set - angle_ref) < -180.0f) angle_set += 360.0f;
     
     /* 角度环输出 = 期望角速度 (rpm) */
     fp32 speed_set = PID_Calc(&motor->angle_pid, angle_ref, angle_set);

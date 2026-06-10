@@ -23,7 +23,7 @@ static void delay_loop(volatile uint32_t count)
         __NOP();
     }
 }
-
+uint8_t cnt;
 int main(void)
 {
     /* 复位 RCC 寄存器 */
@@ -45,6 +45,7 @@ int main(void)
         LED_PORT->BSRR = LED_R_PIN;
         LED_PORT->BSRR = (uint32_t)LED_G_PIN << 16U;
         LED_PORT->BSRR = (uint32_t)LED_B_PIN << 16U;
+        cnt++;
         delay_loop(800000);
         
         /* 绿灯亮 0.5秒 */
